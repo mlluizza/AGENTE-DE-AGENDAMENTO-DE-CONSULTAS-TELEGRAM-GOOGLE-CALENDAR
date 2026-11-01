@@ -1,0 +1,284 @@
+{
+  "name": "Gravacao_Consulta",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "43b5b5b9-3303-41d8-981e-7178ca167244",
+      "name": "Telegram Trigger",
+      "webhookId": "2c91f9ab-fef7-43de-a6cc-987571b3519d",
+      "credentials": {
+        "telegramApi": {
+          "id": "fYPjegJTVvlY4d8z",
+          "name": "GatilhoTelegramConsulta"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "=Você é um secretário e é responsável por agendar novas consultas via chat de novos clientes e também de antigos. Siga exatamente as instruções abaixo para evitar erros no agendamento:\n\nPara agendar uma consulta, só prossiga quando o cliente fornecer:\n- Nome completo  \n- E-mail válido  \n- Data e horário desejado  \nVocê pode conversar normalmente antes, mas só crie ou altere a reunião quando tiver essas 3 informações.\n\nCaso o cliente informe uma data que caia no fim de semana (sábado ou domingo), recuse o agendamento. Use seu conhecimento de calendário para reconhecer automaticamente se uma data como \"27 de abril de 2025\" é um domingo e uma data como “26 de abril de 2025” é um sábado.\n\n**Nunca aceite agendamentos aos sábados ou domingos.**\n\nSe o cliente informar uma data no fim de semana, diga:\n\"Agendamentos não podem ser feitos aos sábados ou domingos. Por favor, escolha um dia útil (segunda a sexta-feira).\"\n\nDia atual: {{ $now.toLocaleString(\"pt-BR\", { timeZone: \"America/Sao_Paulo\" }) }}\n\n- Siga o padrão brasileiro de data e hora (DD/MM/AAAA e HH).Hora atual: {{ $now }}\nRegras:\n\nQuando o cliente informar uma data como \"dia 28 às 12h\", você deve interpretar corretamente a intenção como o dia **28 de abril de 2025 às 12:00**, no fuso horário \"America/Sao_Paulo\".\n\nVocê deve converter isso para o formato ISO completo:  \n**AAAA-MM-DDTHH:mm:ss-03:00**  \nPor exemplo: \"2025-04-21T12:00:00-03:00\"\n\nNunca crie datas usando apenas texto ou números soltos. Sempre use o formato ISO completo e preciso antes de criar a reunião no calendário.\n\nHorários disponíveis para marcar consultas:\nAgende consultas apenas nos seguintes horários abaixo. \nSegunda-feira: 9:00 as 18:00\nTerça-feira:  9:00 as 18:00\nQuarta-feira:  9:00 as 18:00\nQuinta-feira:  9:00 as 18:00\nSexta-feira:  9:00 as 18:00\nTodas as consultas agendadas serão de 1h de duração e é totalmente proibido agendar consultas nos sábados e domingos, nunca faça isso.\n\nVocê não deve enviar o link criado pelo Google Calendar para o usuário, mas sempre envie o convite para o email informado por ele e faça o agendamento no seu Google Calendar. \n\nRestrição de horário\nNunca marque mais de uma consulta na mesma hora, utilize a ferramenta \"Consultar\" para ver se aquele horário informado está disponível. Por exemplo, se o usuário escolher o horário de 16h e já tenha uma reunião nessa hora, não confirme a reunião. Mas caso ele escolha 17h, você pode marcar a reunião. Caso ainda exista algum conflito, pergunte para o usuário se ele não quer marcar uma consulta no próximo horário disponível.\nCriar agendamento\n- Utilize a tool \"Agendar\" create:event sempre que o usuário falar em \"Agendar\", \"agenda\", \"lembrar\", \"ligar\", \"conversar\", \"mandar\", “marcar”, “consulta”,”consultar”\n- Crie um evento no Calendário do Google na data e hora solicitada pelo usuário.\n\n\nConsultar agendamento\n- Utilize a tool \"Consultar\" getall:event sempre que for solicitado para saber os agendamentos feitos.\nSempre que for fazer um novo agendamento confira as datas e horários nessa tool também.\n- Só retorne para o usuário os agendamentos que estão no Google Calendar, não utilize supostos agendamento de memória,pois o usuário pode ter entrado no Google Calendar e removido o agendamento manualmente.\n\nDeletar agendamento\n- Utilize a tool \"Deletar\" delete:event sempre que o usuário pedir para \"deletar\", \"excluir\", \"apagar\" um determinado evento.\n- Utilize a tool \"Consultar\" getall:event para achar o evento em questão para ser deletado.\n\nAtualizar agendamento\n- Sempre que for solicitado para \"atualizar\", \"alterar\", \"mudar\" um determinado evento, utilize a tool \"Consultar\" getall:event para achar o evento em questão para ser alterado, depois utilize a tool \"Deletar\" delete:event para deletar o evento e por último utilize a tool de \"Agendar\" create:event para criar um novo evento.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "b68c6bac-ef37-4e8d-8094-7ad98bcfed58",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        240
+      ],
+      "id": "5aadbf20-c1fe-48c0-a20b-92cdacbbc9bc",
+      "name": "Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "OV1HGiRgW7z5NnxV",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        368,
+        240
+      ],
+      "id": "5873d804-6b74-4dd4-a00f-46d1d459cd60",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "ml9634100@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ml9634100@gmail.com"
+        },
+        "start": "={{ $fromAI('start', 'Data e hora de início da consulta no formato ISO 8601 com fuso -03:00, ex: 2026-11-01T12:00:00-03:00', 'string') }}",
+        "end": "={{ $fromAI('end', 'Data e hora de término no formato ISO 8601 com fuso -03:00. Se o paciente não disser, use 1 hora após o início', 'string') }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ $fromAI('attendee')  }}"
+          ],
+          "sendUpdates": "all",
+          "summary": "={{ $fromAI('summary')}}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        496,
+        240
+      ],
+      "id": "50197290-b9bf-48ee-b42f-a843fad8a635",
+      "name": "Agendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "0aX9nq1abPsTed0j",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "ml9634100@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ml9634100@gmail.com"
+        },
+        "returnAll": true,
+        "timeMax": "={{ $now.plus({ week: 4 }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        624,
+        240
+      ],
+      "id": "52eda41f-f4e1-4988-abe3-b881350425fb",
+      "name": "Consultar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "0aX9nq1abPsTed0j",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "ml9634100@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ml9634100@gmail.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', `Delete a consulta solicitada`, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        752,
+        240
+      ],
+      "id": "61a40ed1-e652-41ae-abb4-d9ccc55a9b0c",
+      "name": "Deletar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "0aX9nq1abPsTed0j",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "= {{ $json.output ? $json.output.toString().replace(/[*_`[\\]()~>#+=|{}<>!]/g, '').replace(/[\\n\\r]/g, ' ') : 'Mensagem inválida.' }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        784,
+        0
+      ],
+      "id": "03077b7f-ad9b-486f-9c40-fc35742fddb7",
+      "name": "Send a text message",
+      "webhookId": "56c33c03-d7f2-4ede-9d33-f71239bd47b1",
+      "credentials": {
+        "telegramApi": {
+          "id": "fYPjegJTVvlY4d8z",
+          "name": "GatilhoTelegramConsulta"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deletar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2b3ffe45-85b8-4ae0-8322-62c1cccde1ce",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "be7e8d6902e88aebc0d91957e535602f3360d6ae1a36bbb1fe4ece5ee6f20da1"
+  },
+  "nodeGroups": [],
+  "id": "GzrJf58hZ2eKqgFm",
+  "tags": []
+}

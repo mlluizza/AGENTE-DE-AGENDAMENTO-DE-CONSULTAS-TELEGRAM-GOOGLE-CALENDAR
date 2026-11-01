@@ -1,0 +1,247 @@
+{
+  "name": "Gravacao_Consulta_Demonstracao",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "43b5b5b9-3303-41d8-981e-7178ca167244",
+      "name": "Telegram Trigger",
+      "webhookId": "2c91f9ab-fef7-43de-a6cc-987571b3519d"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "=Você é um assistente virtual em versão de demonstração. O seu objetivo é apenas simular um atendimento. Pergunte o nome e a data que o paciente deseja, e depois responda dizendo que esta é uma versão de teste e que o agendamento real requer a versão completa do sistema."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "b68c6bac-ef37-4e8d-8094-7ad98bcfed58",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        240
+      ],
+      "id": "5aadbf20-c1fe-48c0-a20b-92cdacbbc9bc",
+      "name": "Gemini"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        368,
+        240
+      ],
+      "id": "5873d804-6b74-4dd4-a00f-46d1d459cd60",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "exemplo@gmail.com",
+          "mode": "list",
+          "cachedResultName": "exemplo@gmail.com"
+        },
+        "start": "={{ $fromAI('start', 'Data e hora de início', 'string') }}",
+        "end": "={{ $fromAI('end', 'Data e hora de término', 'string') }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ $fromAI('attendee')  }}"
+          ],
+          "sendUpdates": "all",
+          "summary": "={{ $fromAI('summary')}}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        496,
+        240
+      ],
+      "id": "50197290-b9bf-48ee-b42f-a843fad8a635",
+      "name": "Agendar"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "exemplo@gmail.com",
+          "mode": "list",
+          "cachedResultName": "exemplo@gmail.com"
+        },
+        "returnAll": true,
+        "timeMax": "={{ $now.plus({ week: 4 }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        624,
+        240
+      ],
+      "id": "52eda41f-f4e1-4988-abe3-b881350425fb",
+      "name": "Consultar"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "exemplo@gmail.com",
+          "mode": "list",
+          "cachedResultName": "exemplo@gmail.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', `Delete a consulta solicitada`, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        752,
+        240
+      ],
+      "id": "61a40ed1-e652-41ae-abb4-d9ccc55a9b0c",
+      "name": "Deletar"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "= {{ $json.output ? $json.output.toString().replace(/[*_`[\\]()~>#+=|{}<>!]/g, '').replace(/[\\n\\r]/g, ' ') : 'Mensagem inválida.' }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        784,
+        0
+      ],
+      "id": "03077b7f-ad9b-486f-9c40-fc35742fddb7",
+      "name": "Send a text message",
+      "webhookId": "56c33c03-d7f2-4ede-9d33-f71239bd47b1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deletar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "demo-version-id-1234",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "id": "GzrJf58hZ2eKqgFm",
+  "tags": []
+}
